@@ -32,6 +32,7 @@ hook OnPlayerDisconnect(playerid, reason)
 		// Optimize and clean database
 		OptimizeDatabase();
 	}
+	return 1;
 }
 
 InitScriptCoreSettings()
@@ -51,7 +52,11 @@ InitScriptCoreSettings()
 	return 1;
 }
 
+#if defined _YSF_included
+CheckServerHostname() { GetConsoleVarAsString("hostname", hostname); }
+#else
 CheckServerHostname() { GetConsoleVarAsString("name", hostname); }
+#endif
 
 InitScriptSecondarySettings()
 {
@@ -65,15 +70,19 @@ InitScriptSecondarySettings()
 	// Settings
 	FixGamemodeText(); // Text that appears on 'Mode' column when you click on a server in samp.exe
 	SendRconCommand("mapname Lobby");
-	IsSkinshot = bool:GetConsoleVarAsBool("game.use_lag_compensation");
+#if !defined opws_fix_included_
+	#if defined _YSF_included
+		IsSkinshot = GetConsoleVarAsInt("lagcompmode") == 1;
+	#else
+		IsSkinshot = GetConsoleVarAsInt("game.lag_compensation_mode") == 1;
+	#endif
+#endif
 	CheckServerHostname();
 	SetTeamDefaultColors();
 	SetTeamDefaultNames();
 	InitSpectate();
-	InitVisualDamage();
 	InitGunmenu();
 	InitVoting();
-	AdjustWeaponRanges();
 
 	CreateObject(3095, 268.74, 1884.21, 16.07, 0.00, 0.00, 0.00); // block area 51
 
@@ -103,9 +112,15 @@ AddToServersDatabase()
 	}
 
 	new ServerIP[30];
+#if defined _YSF_included
 	GetConsoleVarAsString("bind", ServerIP, sizeof(ServerIP));
 
 	new port = GetConsoleVarAsInt("port");
+#else
+	GetConsoleVarAsString("network.bind", ServerIP, sizeof(ServerIP));
+
+	new port = GetConsoleVarAsInt("network.port");
+#endif
 
 	if (!strlen(ServerIP))
 		ServerIP = "noip";

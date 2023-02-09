@@ -121,18 +121,18 @@ InitPlayer(playerid)
 	Player[playerid][ChatChannel]			   = -1;
 	Player[playerid][RoundKills]			   = 0;
 	Player[playerid][RoundDeaths]			   = 0;
-	Player[playerid][RoundDamage]			   = 0;
+	Player[playerid][RoundDamage]			   = 0.0;
 	Player[playerid][WeaponPicked]			   = 0;
 	Player[playerid][TotalKills]			   = 0;
 	Player[playerid][TotalDeaths]			   = 0;
-	Player[playerid][TotalDamage]			   = 0;
+	Player[playerid][TotalDamage]			   = 0.0;
 	Player[playerid][ACKick]				   = 0;
 	Player[playerid][IsSpectatingID]		   = -1;
 	Player[playerid][OutOfArena]			   = MAX_ZONE_LIMIT_WARNINGS;
 	Player[playerid][FPSKick]				   = 0;
 	Player[playerid][PingKick]				   = 0;
 	Player[playerid][PacketKick]			   = 0;
-	Player[playerid][LastVehicle]			   = -1;
+	Player[playerid][LastVehicle]			   = 0;
 	Player[playerid][TimesSpawned]			   = 0;
 	Player[playerid][VWorld]				   = 1;
 	Player[playerid][lastChat]				   = GetTickCount();
@@ -150,8 +150,6 @@ InitPlayer(playerid)
 	Player[playerid][SpectatingRound]		   = -1;
 	InitPlayerSpectate(playerid);
 	ForgetSpectator(playerid);
-	Player[playerid][HitBy]				 = INVALID_PLAYER_ID;
-	Player[playerid][HitWith]			 = 47;
 	Player[playerid][HitSound]			 = 17802;
 	Player[playerid][GetHitSound]		 = 1131;
 	Player[playerid][LastEditWepLimit]	 = -1;
@@ -169,7 +167,6 @@ InitPlayer(playerid)
 	TargetInfoData[playerid][TargetInfoLastTick] = GetTickCount();
 	TargetInfoData[playerid][TargetInfoTimer] = 0;
 	ChangingSkinOfTeam[playerid]			  = -1;
-	Player[playerid][LastEnterVehicleAttempt] = GetTickCount() - 5000;
 	Player[playerid][RequestedClass]		  = NON;
 	Player[playerid][GunmenuModdingType]	  = 0;
 	Player[playerid][GunmenuModdingIndex]	  = 0;
@@ -190,7 +187,6 @@ InitPlayer(playerid)
 	PlayerOnInterface { playerid }	   = false;
 	Player[playerid][Spawned]		   = false;
 	Player[playerid][IsAFK]			   = false;
-	Player[playerid][IsFrozen]		   = false;
 	Player[playerid][AskingForHelp]	   = false;
 	Player[playerid][Mute]			   = false;
 	Player[playerid][ToAddInRound]	   = false;
@@ -198,7 +194,6 @@ InitPlayer(playerid)
 	Player[playerid][blockedall]			   = false;
 	Player[playerid][OnGunmenu]				   = false;
 	Player[playerid][GunmenuStyle]			   = GUNMENU_STYLE_DIALOG;
-	Player[playerid][AlreadyDying]			   = false;
 	Player[playerid][TempNetcheck]			   = false;
 	Player[playerid][InDeathCamera]			   = false;
 	Player[playerid][HasDeathQuote]			   = false;
@@ -306,14 +301,15 @@ hook OnPlayerDisconnect(playerid, reason)
 {
 	DestroyPlayerLabels(playerid);
 	Iter_Remove(PlayersInVehicles, playerid);
+	return 1;
 }
 
 CreatePlayerLabels(playerid)
 {
-	Player[playerid][InfoLabel] = Create3DTextLabel(" ", -1, 0, 0, 0, DRAW_DISTANCE - 3.2, 0, 1);
+	Player[playerid][InfoLabel] = Create3DTextLabel(" ", -1, 0, 0, 0, DRAW_DISTANCE - 3.2, 0, true);
 	Attach3DTextLabelToPlayer(Player[playerid][InfoLabel], playerid, 0, 0, -0.7);
 
-	Player[playerid][DamageLabel] = Create3DTextLabel(" ", -1, 0, 0, 0, DRAW_DISTANCE - 3.2, 0, 1);
+	Player[playerid][DamageLabel] = Create3DTextLabel(" ", -1, 0, 0, 0, DRAW_DISTANCE - 3.2, 0, true);
 	Attach3DTextLabelToPlayer(Player[playerid][DamageLabel], playerid, 0, 0, 2.0);
 }
 
@@ -383,10 +379,6 @@ LoginPlayer(playerid, DBResult: res)
 	// Load Show net textdraws
 	db_get_field_assoc(res, "InterfaceNet", iString, sizeof(iString));
 	PlayerInterface[playerid][INTERFACE_NET] = strval(iString) != 0;
-
-	// Load Show HP textdraws
-	db_get_field_assoc(res, "InterfaceHP", iString, sizeof(iString));
-	PlayerInterface[playerid][INTERFACE_HP] = strval(iString) != 0;
 
 	// Load weapon key binds
 	new fieldName[12], value;
@@ -509,8 +501,8 @@ StorePlayerVariables(playerid)
 
 		if (!Player[i][ToAddInRound])
 		{
-			GetHP(playerid, SaveVariables[i][gHealth]);
-			GetAP(playerid, SaveVariables[i][gArmour]);
+			SaveVariables[i][gHealth] = GetHP(playerid);
+			SaveVariables[i][gArmour] = GetAP(playerid);
 		}
 		else
 		{
@@ -716,7 +708,7 @@ LoadPlayerVariables(playerid)
 			UpdateTeamHP(Player[playerid][Team]);
 
 			ColorFix(playerid);
-			SetPlayerTeam(playerid, Player[playerid][Team]);
+			SetPlayerTeam(playerid, NO_TEAM);
 			RadarFix();
 			SetCPForPlayer(playerid);
 
@@ -822,10 +814,10 @@ ResetSaveVariables(index)
 	SaveVariables[index][pTeam]				= 0;
 	SaveVariables[index][RKills]			= 0;
 	SaveVariables[index][RDeaths]			= 0;
-	SaveVariables[index][RDamage]			= 0;
+	SaveVariables[index][RDamage]			= 0.0;
 	SaveVariables[index][TKills]			= 0;
 	SaveVariables[index][TDeaths]			= 0;
-	SaveVariables[index][TDamage]			= 0;
+	SaveVariables[index][TDamage]			= 0.0;
 	SaveVariables[index][sWasInBase]		= false;
 	SaveVariables[index][RoundID]			= -1;
 	SaveVariables[index][WasCrashedInStart] = false;

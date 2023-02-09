@@ -16,22 +16,19 @@
 hook OnPlayerDisconnect(playerid, reason)
 {
 	if (!Player[playerid][InDuel])
-		return;
+		return 1;
 
-	new iString[128];
-	format(
-		iString, sizeof(iString), "{FFFFFF}%s left server during a duel {757575}| HP %d | Armour %d", Player[playerid][Name], Player[playerid][pHealth], Player[playerid][pArmour]);
-	SendClientMessageToAll(-1, iString);
+	va_SendClientMessageToAll(-1, "%s left server during a duel {757575}| HP %d | Armour %d", Player[playerid][Name], GetHP(playerid), GetAP(playerid));
 
 	new winner = Player[playerid][challengerid];
-	format(iString, sizeof(iString), "{FFFFFF}His opponent %s had {757575}%d HP and %d Armour", Player[winner][Name], Player[winner][pHealth], Player[winner][pArmour]);
-	SendClientMessageToAll(-1, iString);
+	va_SendClientMessageToAll(-1, "His opponent %s had {757575}%d HP and %d Armour", Player[winner][Name], GetHP(winner), GetAP(winner));
 	Player[winner][InDuel] = false;
 	Player[playerid][DuelsLost]++;
 	Player[winner][DuelsWon]++;
 	ResetDuellers(winner, playerid);
 	UpdateDuellersStats(winner, playerid);
 	Player[winner][challengerid] = -1;
+	return 1;
 }
 
 ResetDuellers(dueller1, dueller2, bool: respawn = true)
@@ -63,16 +60,12 @@ ResetDuellers(dueller1, dueller2, bool: respawn = true)
 UpdateDuellersStats(winner, loser)
 {
 	// announcement
-	new str[144];
-	format(
-		str, sizeof(str), COL_PRIM "Duel stats: {FFFFFF}%s [W: %d / L: %d] & %s [W: %d / L: %d]", Player[winner][NameWithoutTag], Player[winner][DuelsWon],
-		Player[winner][DuelsLost], Player[loser][NameWithoutTag], Player[loser][DuelsWon], Player[loser][DuelsLost]);
-	SendClientMessageToAll(-1, str);
+	va_SendClientMessageToAll(
+		-1, COL_PRIM "Duel stats: {FFFFFF}%s [W: %d / L: %d] & %s [W: %d / L: %d]", Player[winner][NameWithoutTag], Player[winner][DuelsWon], Player[winner][DuelsLost],
+		Player[loser][NameWithoutTag], Player[loser][DuelsWon], Player[loser][DuelsLost]);
 	// database
-	format(str, sizeof(str), "UPDATE Players SET DLost = %d WHERE Name = '%q'", Player[loser][DuelsLost], Player[loser][Name]);
-	db_free_result(db_query(sqliteconnection, str));
-	format(str, sizeof(str), "UPDATE Players SET DWon = %d WHERE Name = '%q'", Player[winner][DuelsWon], Player[winner][Name]);
-	db_free_result(db_query(sqliteconnection, str));
+	db_free_result(db_query(sqliteconnection, va_return("UPDATE Players SET DLost = %d WHERE Name = '%q'", Player[loser][DuelsLost], Player[loser][Name])));
+	db_free_result(db_query(sqliteconnection, va_return("UPDATE Players SET DWon = %d WHERE Name = '%q'", Player[winner][DuelsWon], Player[winner][Name])));
 }
 
 ProcessDuelRequest(duel_host, duel_guest, weapon1, weapon2, arena, size)
@@ -101,11 +94,9 @@ ProcessDuelRequest(duel_host, duel_guest, weapon1, weapon2, arena, size)
 	SendClientMessage(duel_guest, -1, "{FF8800}Type {FFFFFF}/yes {FF8800}to accept the duel challenge or {FFFFFF}/no {FF8800}to deny the duel challenge.");
 	PlayerPlaySound(duel_guest, 1137, 0.0, 0.0, 0.0);
 
-	new iString[164];
-	format(
-		iString, sizeof(iString), "%s%s {FFFFFF}challenged %s%s {FFFFFF}to a duel with: %s and %s", TextColor[Player[duel_host][Team]], Player[duel_host][Name],
-		TextColor[Player[duel_guest][Team]], Player[duel_guest][Name], WeaponNames[weapon1], WeaponNames[weapon2]);
-	return SendClientMessageToAll(-1, iString);
+	return SendClientMessageToAll(
+		-1, "%s%s {FFFFFF}challenged %s%s {FFFFFF}to a duel with: %s and %s", TextColor[Player[duel_host][Team]], Player[duel_host][Name], TextColor[Player[duel_guest][Team]],
+		Player[duel_guest][Name], ReturnWeaponName(weapon1), ReturnWeaponName(weapon2));
 }
 
 DetermineDuelArena(Float: centerx, Float: centery, size, &Float: minx, &Float: miny, &Float: maxx, &Float: maxy)
@@ -191,29 +182,29 @@ StartDuel(dueller1, dueller2, weapon1, weapon2, Float: centerx, Float: centery, 
 	PositionPlayersInDuel(dueller1, dueller2, centerx, centery, arena_size);
 	RadarFix(dueller1);
 	RadarFix(dueller2);
-	new Float: zoneX[2],
-		Float: zoneY[2];
-	DetermineDuelArena(centerx, centery, arena_size, zoneX[0], zoneY[0], zoneX[1], zoneY[1]);
-	new gangzone = GangZoneCreate(zoneX[0], zoneY[0], zoneX[1], zoneY[1]);
+
+	new Float: minX,
+		Float: minY,
+		Float: maxX,
+		Float: maxY;
+	DetermineDuelArena(centerx, centery, arena_size, minX, minY, maxX, maxY);
+	new gangzone = GangZoneCreate(minX, minY, maxX, maxY);
 	GangZoneShowForPlayer(dueller1, gangzone, 0xFFA50066);
 	GangZoneShowForPlayer(dueller2, gangzone, 0xFFA50066);
 	Player[dueller1][Duel_GangZone] = gangzone;
 	Player[dueller2][Duel_GangZone] = gangzone;
-	SetPlayerWorldBounds(dueller1, zoneX[1], zoneX[0], zoneY[1], zoneY[0]);
-	SetPlayerWorldBounds(dueller2, zoneX[1], zoneX[0], zoneY[1], zoneY[0]);
+	SetPlayerWorldBounds(dueller1, maxX, minX, maxY, minY);
+	SetPlayerWorldBounds(dueller2, maxX, minX, maxY, minY);
 }
 
 PlayerDuelQuit(playerid)
 {
-	new winner, iString[128], HPs[2];
-	GetHP(playerid, HPs[0]);
-	GetAP(playerid, HPs[1]);
-	winner = Player[playerid][challengerid];
+	new winner = Player[playerid][challengerid];
+	new health = GetHP(playerid);
+	new armour = GetAP(playerid);
 
-	format(
-		iString, sizeof(iString), "%s%s {FFFFFF}rage-quit from a duel | {757575}HP %d | Armour %d", TextColor[Player[playerid][TeamBeforeDuel]], Player[playerid][Name], HPs[0],
-		HPs[1]);
-	SendClientMessageToAll(-1, iString);
+	va_SendClientMessageToAll(
+		-1, "%s%s {FFFFFF}rage-quit from a duel | {757575}HP %d | Armour %d", TextColor[Player[playerid][TeamBeforeDuel]], Player[playerid][Name], health, armour);
 
 	Player[playerid][InDuel] = false;
 	Player[winner][InDuel]	 = false;
@@ -231,14 +222,11 @@ ProcessDuellerDeath(playerid, killerid, reason)
 	if (killerid == -1 || killerid == INVALID_PLAYER_ID)
 		killerid = Player[playerid][challengerid];
 
-	new str[144];
-	new HP[2];
-	GetHP(killerid, HP[0]);
-	GetAP(killerid, HP[1]);
-	format(
-		str, sizeof(str), "%s%s " COL_PRIM "raped %s%s " COL_PRIM "in a duel with %s | {FFFFFF}%d HP", TextColor[Player[killerid][TeamBeforeDuel]], Player[killerid][Name],
-		TextColor[Player[playerid][TeamBeforeDuel]], Player[playerid][Name], WeaponNames[reason], (HP[0] + HP[1]));
-	SendClientMessageToAll(-1, str);
+	new health = GetHP(killerid);
+	new armour = GetAP(killerid);
+	va_SendClientMessageToAll(
+		-1, "%s%s " COL_PRIM "raped %s%s " COL_PRIM "in a duel with %s | {FFFFFF}%d HP", TextColor[Player[killerid][TeamBeforeDuel]], Player[killerid][Name],
+		TextColor[Player[playerid][TeamBeforeDuel]], Player[playerid][Name], ReturnWeaponName(reason), health + armour);
 	Player[playerid][challengerid] = -1;
 	Player[killerid][challengerid] = -1;
 	Player[playerid][duelweap1]	   = 0;

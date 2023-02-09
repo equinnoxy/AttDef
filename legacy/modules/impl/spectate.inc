@@ -22,6 +22,7 @@ hook OnPlayerDisconnect(playerid, reason)
 	// Handle spectate when a player disconnects
 	StopSpectate(playerid);
 	HandleSpectatedPlayerDisconnect(playerid);
+	return 1;
 }
 
 UpdateSpectateInfoForPlayer(spectatorid)
@@ -32,10 +33,10 @@ UpdateSpectateInfoForPlayer(spectatorid)
 	new specStr[235], specid = Player[spectatorid][IsSpectatingID];
 	format(
 		specStr, sizeof(specStr),
-		"%s%s ~r~~h~%d~n~~n~%s(%d) (~r~~h~%d%s)~n~FPS: ~r~~h~%d %sPing: ~r~~h~%d~n~%sPacket-Loss: ~r~~h~%.1f~n~%sKills: ~r~~h~%d~n~%sDamage: ~r~~h~%d~n~%sTotal Dmg: ~r~~h~%d",
-		MAIN_TEXT_COLOUR, Player[specid][Name], specid, MAIN_TEXT_COLOUR, Player[specid][pArmour], Player[specid][pHealth], MAIN_TEXT_COLOUR, GetPlayerFPS(specid),
+		"%s%s ~r~~h~%d~n~~n~%s(%d) (~r~~h~%d%s)~n~FPS: ~r~~h~%d %sPing: ~r~~h~%d~n~%sPacket-Loss: ~r~~h~%.2f~n~%sKills: ~r~~h~%d~n~%sDamage: ~r~~h~%d~n~%sTotal Dmg: ~r~~h~%d",
+		MAIN_TEXT_COLOUR, Player[specid][Name], specid, MAIN_TEXT_COLOUR, GetAP(specid), GetHP(specid), MAIN_TEXT_COLOUR, GetPlayerFPS(specid),
 		MAIN_TEXT_COLOUR, GetPlayerPing(specid), MAIN_TEXT_COLOUR, NetStats_PacketLossPercent(specid), MAIN_TEXT_COLOUR, Player[specid][RoundKills], MAIN_TEXT_COLOUR,
-		Player[specid][RoundDamage], MAIN_TEXT_COLOUR, Player[specid][TotalDamage]);
+		floatround(Player[specid][RoundDamage]), MAIN_TEXT_COLOUR, floatround(Player[specid][TotalDamage]));
 
 	PlayerTextDrawSetString(spectatorid, SpecText[spectatorid][1], specStr);
 	PlayerTextDrawSetString(spectatorid, SpecText[spectatorid][3], ListWeapsSpec(specid));
@@ -101,7 +102,7 @@ ListWeapsSpec(playerid)
 		GetPlayerWeaponData(playerid, slt, wep, ammo); // fetch the weapon data in this slot
 		if (ammo > 0)								   // if it isn't out of ammo
 			if (IsValidWeapon(wep))					   // ignore some weapons like fist and bruss knuckless..etc
-				format(str, sizeof(str), "%s%s%s ~r~~h~%d~n~", str, MAIN_TEXT_COLOUR, WeaponNames[wep], ammo);
+				format(str, sizeof(str), "%s%s%s ~r~~h~%d~n~", str, MAIN_TEXT_COLOUR, ReturnWeaponName(wep), ammo);
 	}
 	return str;
 }
@@ -175,9 +176,8 @@ SpectatePlayer(playerid, specid)
 		{
 			if (Player[i][IsSpectatingID] == playerid)
 			{
-				new tmp = i;
-				Iter_SafeRemove(AllSpectators, i, i);
-				StopSpectate(tmp, false);
+				Iter_Remove(AllSpectators, i);
+				StopSpectate(i, false);
 			}
 		}
 	}
@@ -197,16 +197,6 @@ SpectatePlayer(playerid, specid)
 
 		// Hide some HUD textdraws
 		PlayerTextDrawHide(playerid, RoundKillDmgTDmg[playerid]);
-		PlayerTextDrawHide(playerid, ArmourTextDraw[playerid]);
-		PlayerTextDrawHide(playerid, HPTextDraw_TD[playerid]);
-		HidePlayerProgressBar(playerid, HealthBar[playerid]);
-	}
-
-	// This will hide any damage textdraws shown for the spectator sooner
-	for (new i = 0; i < MAX_VISUAL_DAMAGES; i++)
-	{
-		VisualDamage[playerid][TakenDamageTick][i] = 0;
-		VisualDamage[playerid][GivenDamageTick][i] = 0;
 	}
 
 	// Update variables
@@ -245,18 +235,6 @@ SpectatePlayer(playerid, specid)
 	return 1;
 }
 
-/* Note:
-	set remove_iterator to false if you're using this in a loop
-	and safely remove, for example
-
-	new tmp
-	foreach(new i : AllSpectators)
-	{
-		tmp = i;
-		Iter_SafeRemove(AllSpectators, i, i);
-		StopSpectate(tmp, false);
-	}
-*/
 StopSpectate(playerid, bool: remove_iterator = true)
 {
 	if (!Player[playerid][Spectating])
@@ -283,9 +261,8 @@ StopSpectate(playerid, bool: remove_iterator = true)
 
 			if (Player[i][IsSpectatingID] == playerid)
 			{
-				new tmp = i;
-				Iter_SafeRemove(AllSpectators, i, i);
-				StopSpectate(tmp, false);
+				Iter_Remove(AllSpectators, i);
+				StopSpectate(i, false);
 			}
 		}
 	}
@@ -307,17 +284,10 @@ StopSpectate(playerid, bool: remove_iterator = true)
 	HideTeamCornerInfo(playerid);
 	// Reset text
 	PlayerTextDrawSetString(playerid, WhoSpec[playerid], " ");
-	// Reshow HUD textdraws
-	if (PlayerInterface[playerid][INTERFACE_HP])
-	{
-		PlayerTextDrawShow(playerid, HPTextDraw_TD[playerid]);
-		PlayerTextDrawShow(playerid, ArmourTextDraw[playerid]);
-	}
 	PlayerTextDrawShow(playerid, RoundKillDmgTDmg[playerid]);
 	if (PlayerInterface[playerid][INTERFACE_NET])
 		PlayerTextDrawShow(playerid, FPSPingPacket[playerid]);
 	PlayerTextDrawShow(playerid, BaseID_VS[playerid]);
-	ShowPlayerProgressBar(playerid, HealthBar[playerid]);
 
 	// Cancel spectating mode
 	// This will be called if he was spectating normally, not /freecam mode

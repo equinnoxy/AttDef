@@ -17,7 +17,11 @@
 
 #include <YSI_Coding\y_hooks>
 
-hook OnPlayerDisconnect(playerid, reason) { DeletePlayerTeamBar(playerid); }
+hook OnPlayerDisconnect(playerid, reason)
+{
+	DeletePlayerTeamBar(playerid);
+	return 1;
+}
 
 // This finds the Y co-ordinate of the next free place for the team HP bar textdraw
 FindPlayerTeamBarY(playerid, &Float: y)
@@ -72,7 +76,7 @@ CreatePlayerTeamBar(playerid)
 	TeamBarsData[playerid][TeamBar]		= CreatePlayerProgressBar(playerid, TEAMBARS_BAR_START_X, y, 80.50, 9.19, teamBarColour, 200.0);
 	// Create team bar textdraws
 	TeamBarsData[playerid][TeamBarText] = TextDrawCreate(
-		TEAMBARS_TEXT_START_X, y, va_return(formatToUse, Player[playerid][NameWithoutTag], (Player[playerid][pHealth] + Player[playerid][pArmour]), Player[playerid][RoundDamage]));
+		TEAMBARS_TEXT_START_X, y, va_return(formatToUse, Player[playerid][NameWithoutTag], GetHP(playerid) + GetAP(playerid), floatround(Player[playerid][RoundDamage])));
 	TextDrawBackgroundColor(TeamBarsData[playerid][TeamBarText], 51);
 	TextDrawFont(TeamBarsData[playerid][TeamBarText], 1);
 	TextDrawLetterSize(TeamBarsData[playerid][TeamBarText], 0.160000, 0.900000);
@@ -252,11 +256,11 @@ UpdatePlayerTeamBar(playerid)
 			colourToSet		= Player[playerid][AskingForHelp] ? TEAMBARS_DEFENDER_HELP_COLOR : TEAMBARS_DEFENDER_COLOR;
 			formatToUse[10] = 'b';
 		}
-		SetPlayerProgressBarValue(playerid, TeamBarsData[playerid][TeamBar], Player[playerid][pHealth] + Player[playerid][pArmour]);
+		SetPlayerProgressBarValue(playerid, TeamBarsData[playerid][TeamBar], GetHP(playerid) + GetAP(playerid));
 		SetPlayerProgressBarColour(playerid, TeamBarsData[playerid][TeamBar], colourToSet);
 		TextDrawSetString(
 			TeamBarsData[playerid][TeamBarText],
-			va_return(formatToUse, Player[playerid][NameWithoutTag], (Player[playerid][pHealth] + Player[playerid][pArmour]), Player[playerid][RoundDamage]));
+			va_return(formatToUse, Player[playerid][NameWithoutTag], GetHP(playerid) + GetAP(playerid), floatround(Player[playerid][RoundDamage])));
 	}
 	else
 	{
@@ -264,7 +268,7 @@ UpdatePlayerTeamBar(playerid)
 		if (Player[playerid][Team] == DEFENDER)
 			formatToUse[10] = 'b';
 		SetPlayerProgressBarValue(playerid, TeamBarsData[playerid][TeamBar], 0.0);
-		TextDrawSetString(TeamBarsData[playerid][TeamBarText], va_return(formatToUse, Player[playerid][NameWithoutTag], Player[playerid][RoundDamage]));
+		TextDrawSetString(TeamBarsData[playerid][TeamBarText], va_return(formatToUse, Player[playerid][NameWithoutTag], floatround(Player[playerid][RoundDamage])));
 	}
 
 	foreach (new i : Player)

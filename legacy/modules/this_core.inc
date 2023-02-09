@@ -13,7 +13,7 @@
 
 #include <mSelection> // Selection with preview models feature library
 
-#define GM_VERSION "1.37.10 (r)"
+#define GM_VERSION "1.38.0 (r)"
 #define GM_NAME	   "Att-Def"
 new GM_WEBSITE[50] = "discord.io/attackdefend";
 
@@ -27,4 +27,4 @@ new GM_WEBSITE[50] = "discord.io/attackdefend";
 
 new DB: sqliteconnection; // SQLite Databases
 new teamskinlist = mS_INVALID_LISTID, playerskinlist = mS_INVALID_LISTID;
-new bool:IsSkinshot = false;
+new stock bool: IsSkinshot = false;

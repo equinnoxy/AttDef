@@ -34,16 +34,11 @@ YCMD: end(playerid, params[], help)
 	if (RoundPaused)
 		TextDrawHideForAll(PauseTD);
 
-	if (CPZone)
-	{
-		GangZoneDestroy(CPZone);
-		CPZone = 0;
-	}
-	if (ArenaZone)
-	{
-		GangZoneDestroy(ArenaZone);
-		ArenaZone = 0;
-	}
+	GangZoneDestroy(CPZone);
+	CPZone = INVALID_GANG_ZONE;
+
+	GangZoneDestroy(ArenaZone);
+	ArenaZone = INVALID_GANG_ZONE;
 
 	RoundPaused			   = false;
 	TeamCapturingCP		   = NON;
@@ -59,7 +54,7 @@ YCMD: end(playerid, params[], help)
 
 	foreach (new i : Player)
 	{
-		if (Player[i][InDuel] || Player[i][IsAFK] || !Player[i][Spawned])
+		if (Player[i][InDM] || Player[i][InDuel] || Player[i][IsAFK] || !Player[i][Spawned])
 			continue;
 
 		Player[i][Playing] = false;
@@ -98,22 +93,19 @@ YCMD: end(playerid, params[], help)
 	ArenaStarted = false;
 
 	SendRconCommand("mapname Lobby");
-	FixGamemodeText();
+	//FixGamemodeText();
 
 	DeleteAllTeamBars();
 	HideTeamCornerInfoForAll();
 
 	DeleteAllDeadBodies();
-	if (CPZone)
-	{
-		GangZoneDestroy(CPZone);
-		CPZone = 0;
-	}
-	if (ArenaZone)
-	{
-		GangZoneDestroy(ArenaZone);
-		ArenaZone = 0;
-	}
+
+	GangZoneDestroy(CPZone);
+	CPZone = INVALID_GANG_ZONE;
+	
+	GangZoneDestroy(ArenaZone);
+	ArenaZone = INVALID_GANG_ZONE;
+
 	ResetTeamLeaders();
 	Iter_Clear(PlayersInRound);
 
@@ -122,5 +114,5 @@ YCMD: end(playerid, params[], help)
 
 	LogAdminCommand("end", playerid, INVALID_PLAYER_ID);
 
-	return SendClientMessageToAll(-1, va_return("{FFFFFF}%s " COL_PRIM "has ended the round.", Player[playerid][Name]));
+	return va_SendClientMessageToAll(-1, "%s " COL_PRIM "has ended the round.", Player[playerid][Name]);
 }

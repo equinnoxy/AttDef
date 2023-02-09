@@ -5,6 +5,8 @@
 
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
+	if (dialogid == DIALOG_NO_RESPONSE)
+		return 1;
 	switch (dialogid)
 	{
 		case DIALOG_GUNMENU_MELEE:
@@ -42,7 +44,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				new str[140];
 				format(
 					str, sizeof str, "Key: %s+%s\nCurrent weapon: %s\n\nType weapon name or ID below to code this key bind for it", WEAPON_BIND_PRIMARY_KEY_TEXT_ALT,
-					WeaponBindKeyText_ALT[index], WeaponNames[WeaponBindData[playerid][BindKeyWeapon][index]]);
+					WeaponBindKeyText_ALT[index], ReturnWeaponName(WeaponBindData[playerid][BindKeyWeapon][index]));
 				ShowPlayerDialog(playerid, DIALOG_WEAPONBIND_MODIFY, DIALOG_STYLE_INPUT, "Coding weapon key bind", str, "Code it", "Cancel");
 			}
 			return 1;
@@ -68,127 +70,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 					format(str, sizeof(str), "UPDATE Players SET WeaponBind%d = %d WHERE Name = '%q'", index, weaponid, Player[playerid][Name]);
 					db_free_result(db_query(sqliteconnection, str));
 					ShowPlayerWeaponBindTextDraw(playerid, 5000);
-				}
-			}
-			return 1;
-		}
-		case DIALOG_REPLACE_FIRST:
-		{
-			if (response)
-			{
-				new ToAddID = -1;
-				foreach (new i : Player)
-				{
-					if (!strcmp(Player[i][Name], inputtext, false, strlen(inputtext)))
-					{
-						ToAddID++;
-						REPLACE_ToAddID[playerid] = i;
-						break;
-					}
-				}
-				if (ToAddID > -1)
-				{
-					foreach (new i : Player)
-					{
-						if (!Player[i][Playing])
-							continue;
-
-						AddDialogListitem(playerid, Player[i][Name]);
-					}
-					for (new i = 0; i < SAVE_SLOTS; i++)
-					{
-						if (SaveVariables[i][pName][0] && SaveVariables[i][RoundID] == Current && SaveVariables[i][ToBeAdded] == true)
-						{
-							AddDialogListitem(playerid, SaveVariables[i][pName]);
-						}
-					}
-					ShowPlayerDialog(playerid, DIALOG_REPLACE_SECOND, DIALOG_STYLE_LIST, COL_PRIM "Player to replace", #, "Process", "Cancel", 15);
-				}
-				else
-					SendErrorMessage(playerid, "Player not found.");
-			}
-			return 1;
-		}
-		case DIALOG_REPLACE_SECOND:
-		{
-			if (response)
-			{
-				new ToReplaceID = -1;
-				foreach (new i : Player)
-				{
-					if (!strcmp(Player[i][Name], inputtext, false, strlen(inputtext)))
-					{
-						ToReplaceID = i;
-						break;
-					}
-				}
-				if (ToReplaceID != -1)
-				{
-					new ToAddID = REPLACE_ToAddID[playerid];
-					if (!IsPlayerConnected(ToAddID))
-					{
-						return SendErrorMessage(playerid, "Player is not connected anymore.");
-					}
-
-					if (Player[ToAddID][InDM] == true)
-					{
-						Player[ToAddID][InDM]	 = false;
-						Player[ToAddID][DMReadd] = 0;
-					}
-
-					if (Player[ToAddID][InDuel] == true)
-						return SendErrorMessage(playerid, "That player is in a duel."); //duel
-
-					if (Player[ToAddID][LastVehicle] != -1)
-					{
-						DestroyVehicle(Player[ToAddID][LastVehicle]);
-						Player[ToAddID][LastVehicle] = -1;
-					}
-
-					if (Player[ToAddID][Spectating] == true)
-						StopSpectate(ToAddID);
-
-					SetTimerEx("OnPlayerReplace", 500, false, "iii", ToAddID, ToReplaceID, playerid);
-				}
-				else
-				{
-					for (new i = 0; i < SAVE_SLOTS; i++)
-					{
-						if (SaveVariables[i][pName][0] && !strcmp(SaveVariables[i][pName], inputtext, false, strlen(inputtext)) && SaveVariables[i][RoundID] == Current)
-						{
-							ToReplaceID = i;
-							break;
-						}
-					}
-					if (ToReplaceID > -1)
-					{
-						new ToAddID = REPLACE_ToAddID[playerid];
-						if (!IsPlayerConnected(ToAddID))
-						{
-							return SendErrorMessage(playerid, "Player is not connected anymore.");
-						}
-
-						if (Player[ToAddID][InDM] == true)
-						{
-							Player[ToAddID][InDM]	 = false;
-							Player[ToAddID][DMReadd] = 0;
-						}
-
-						if (Player[ToAddID][InDuel] == true)
-							return SendErrorMessage(playerid, "That player is in a duel."); //duel
-
-						if (Player[ToAddID][LastVehicle] != -1)
-						{
-							DestroyVehicle(Player[ToAddID][LastVehicle]);
-							Player[ToAddID][LastVehicle] = -1;
-						}
-
-						if (Player[ToAddID][Spectating] == true)
-							StopSpectate(ToAddID);
-						SetTimerEx("OnPlayerInGameReplace", 500, false, "iii", ToAddID, ToReplaceID, playerid);
-					}
-					else
-						SendErrorMessage(playerid, "Player not found.");
 				}
 			}
 			return 1;
@@ -237,12 +118,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
 						format(
 							statsSTR[0], sizeof(statsSTR[]),
-							COL_PRIM "- {FFFFFF}Country: %s, %s\n\n" COL_PRIM "- {FFFFFF}Round Kills: \t%d\t\t" COL_PRIM "- {FFFFFF}Total Kills: \t\t%d\t\t" COL_PRIM "- {FFFFFF}FPS: \t\t\t%d\n" COL_PRIM "- {FFFFFF}Round Deaths: \t%.0f\t\t" COL_PRIM "- {FFFFFF}Total Deaths: \t%d\t\t" COL_PRIM "- {FFFFFF}Ping: \t\t\t%d\n",
+							COL_PRIM "- {FFFFFF}Country: %s, %s\n\n" COL_PRIM "- {FFFFFF}Round Kills: \t%d\t\t" COL_PRIM "- {FFFFFF}Total Kills: \t\t%d\t\t" COL_PRIM "- {FFFFFF}FPS: \t\t\t%d\n" COL_PRIM "- {FFFFFF}Round Deaths: \t%d\t\t" COL_PRIM "- {FFFFFF}Total Deaths: \t%d\t\t" COL_PRIM "- {FFFFFF}Ping: \t\t\t%d\n",
 							Country, CountryCode, Player[CID][RoundKills], Player[CID][TotalKills], GetPlayerFPS(CID), RD, TD, GetPlayerPing(CID));
 						format(
 							statsSTR[1], sizeof(statsSTR[]),
 							COL_PRIM "- {FFFFFF}Round Damage: \t%d\t\t" COL_PRIM "- {FFFFFF}Total Damage:   \t%d\t\t" COL_PRIM "- {FFFFFF}Packet-Loss:   \t%.1f\n\n" COL_PRIM "- {FFFFFF}Player Weather: \t%d\t\t" COL_PRIM "- {FFFFFF}Chat Channel: \t%d\t\t" COL_PRIM "- {FFFFFF}In Round: \t\t%s\n",
-							Player[CID][RoundDamage], Player[CID][TotalDamage], NetStats_PacketLossPercent(CID), Player[CID][Weather], (MC == YC ? YC : -1),
+							floatround(Player[CID][RoundDamage]), floatround(Player[CID][TotalDamage]), NetStats_PacketLossPercent(CID), Player[CID][Weather], (MC == YC ? YC : -1),
 							(Player[CID][Playing] == true ? ("Yes") : ("No")));
 						format(
 							statsSTR[2], sizeof(statsSTR[]),
@@ -415,7 +296,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						{
 							Player[i][TotalKills]		 = 0;
 							Player[i][TotalDeaths]		 = 0;
-							Player[i][TotalDamage]		 = 0;
+							Player[i][TotalDamage]		 = 0.0;
 							Player[i][RoundPlayed]		 = 0;
 							Player[i][TotalBulletsFired] = 0;
 							Player[i][TotalshotsHit]	 = 0;
@@ -459,7 +340,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				{
 					Player[i][TotalKills]		 = 0;
 					Player[i][TotalDeaths]		 = 0;
-					Player[i][TotalDamage]		 = 0;
+					Player[i][TotalDamage]		 = 0.0;
 					Player[i][RoundPlayed]		 = 0;
 					Player[i][TotalBulletsFired] = 0;
 					Player[i][TotalshotsHit]	 = 0;
@@ -471,6 +352,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
 				WarMode = false;
 
+				FixGamemodeText();
 				format(iString, sizeof(iString), "{FFFFFF}%s " COL_PRIM "has disabled the Match-Mode.", Player[playerid][Name]);
 				SendClientMessageToAll(-1, iString);
 			}

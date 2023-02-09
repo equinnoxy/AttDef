@@ -20,21 +20,16 @@ YCMD: rr(playerid, params[], help)
 	RoundPaused	   = false;
 	RoundUnpausing = false;
 
-	if (CPZone)
-	{
-		GangZoneDestroy(CPZone);
-		CPZone = 0;
-	}
-	if (ArenaZone)
-	{
-		GangZoneDestroy(ArenaZone);
-		ArenaZone = 0;
-	}
+	GangZoneDestroy(CPZone);
+	CPZone = INVALID_GANG_ZONE;
+
+	GangZoneDestroy(ArenaZone);
+	ArenaZone = INVALID_GANG_ZONE;
 
 	ResetBackupRequests();
 
 	new iString[128];
-	format(iString, sizeof(iString), "{FFFFFF}%s " COL_PRIM "has set the round to restart. Round restarting...", Player[playerid][Name]);
+	format(iString, sizeof(iString), "%s " COL_PRIM "has set the round to restart.", Player[playerid][Name]);
 	SendClientMessageToAll(-1, iString);
 
 	ResetGunmenuSelections();

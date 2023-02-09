@@ -20,13 +20,6 @@ public OnPlayerSpawn(playerid)
 		HidePlayerGunmenu(playerid);
 	}
 
-	// If the server sees this player frozen
-	if (Player[playerid][IsFrozen])
-	{
-		// Tell the script he is not frozen anymore
-		Player[playerid][IsFrozen] = false;
-	}
-
 	// If this player is just spawning regularly
 	if (!Player[playerid][Playing] && !Player[playerid][InDM] && !Player[playerid][InDuel])
 	{
@@ -38,7 +31,7 @@ public OnPlayerSpawn(playerid)
 		ResetPlayerWeapons(playerid);
 		// 'playerid' is unique which means playerids can never match, hence we use that to initialize player's team
 		// and workaround SAMP's built-in anti team-shooting (i.e players in the same team cannot harm each other)
-		SetPlayerTeam(playerid, playerid);
+		SetPlayerTeam(playerid, NO_TEAM);
 		SetPlayerScore(playerid, 0);
 
 		// Initialize player spawn camera and position

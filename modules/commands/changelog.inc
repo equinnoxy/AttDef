@@ -23,6 +23,37 @@ YCMD: changelog(playerid1, params[], help)
 			case 0:
 			{
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+				strcat(str, COL_SEC "\n  1.38.0 Features and fixes");
+				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+				strcat(str, "{CCCCCC}\nAdded weapon-config.");
+				strcat(str, "{CCCCCC}\nFPS independent lagshoot.");
+				strcat(str, "{CCCCCC}\nAdded several samp patches for gameplay integrity.");
+				strcat(str, "{CCCCCC}\nDamage modification for most weapons available through " COL_PRIM "/" COL_SEC "weapondmg");
+				strcat(str, "{CCCCCC}\nGeneral improvements and fixes.");
+				strcat(str, COL_PRIM"\n\nPRO TIPS:");
+				strcat(str, COL_SEC "\n{FFD700}Sniper bug fix available! " COL_SEC "shorturl.at/bgpH1");
+				strcat(str, COL_SEC "\n{FFD700}Silent ASI Loader required: " COL_SEC "shorturl.at/szCR0");
+				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
+				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
+			}
+			case 1:
+			{
+				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+				strcat(str, COL_SEC "\n  1.37.11 Features and fixes");
+				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+				strcat(str, "{CCCCCC}\nImproved performance for some internals.");
+				strcat(str, "{CCCCCC}\nUpdated third party libraries and services.");
+				strcat(str, "{CCCCCC}\nFixed some known errors.");
+				strcat(str, "{CCCCCC}\nweapon-config is not present, but will be introduced in v1.38.");
+				strcat(str, COL_PRIM"\n\nPRO TIPS:");
+				strcat(str, COL_SEC "\n{FFD700}Sniper bug fix available! " COL_SEC "shorturl.at/bgpH1");
+				strcat(str, COL_SEC "\n{FFD700}Silent ASI Loader required: " COL_SEC "shorturl.at/szCR0");
+				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
+				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
+			}
+			case 2:
+			{
+				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC "\n  1.37.10 (Performance Update) Features and fixes");
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, "{CCCCCC}\nReplacing someone should set its correct skin now.");
@@ -38,7 +69,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 1:
+			case 3:
 			{
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC "\n  1.37.9 Features and fixes");
@@ -51,12 +82,13 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 2:
+			case 4:
 			{
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC "\n  1.37.8 Features and fixes");
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, "{CCCCCC}\nAdded " COL_PRIM "/" COL_SEC "deaglenerf {CCCCCC} to configure deagle dmg.");
+				strcat(str, "{CCCCCC}\nAdded " COL_PRIM "/" COL_SEC "snipernerf {CCCCCC} to configure sniper dmg.");
 				strcat(str, "{CCCCCC}\nRound timer is now reduced properly (sadly timer bug is still around).");
 				strcat(str, "{CCCCCC}\nReplacing a player now sets the correct skin.");
 				strcat(str, COL_PRIM"\n\nPRO TIPS:");
@@ -65,7 +97,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 3:
+			case 5:
 			{
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC "\n  1.37.7 Features and fixes");
@@ -79,7 +111,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 4:
+			case 6:
 			{
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC "\n  1.37.6 Features and fixes");
@@ -91,7 +123,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 5:
+			case 7:
 			{
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC "\n  1.37.5 (no anticheats) Features and fixes");
@@ -104,7 +136,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 6:
+			case 8:
 			{
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC "\n  1.37.5 Features and fixes");
@@ -119,7 +151,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 7:
+			case 9:
 			{
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC "\n  1.37.4 Features and fixes");
@@ -132,7 +164,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 8:
+			case 10:
 			{
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC "\n  1.37.3 Features and fixes");
@@ -152,7 +184,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 9:
+			case 11:
 			{
 				strcat(str, COL_PRIM "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC "\n  1.37.2 Features and fixes");
@@ -165,7 +197,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 10:
+			case 12:
 			{
 				strcat(str, COL_PRIM"\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC"\n  1.37.1 Features and fixes");
@@ -177,7 +209,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 11:
+			case 13:
 			{
 				strcat(str, COL_PRIM"\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC"\n  1.37.0 Features and fixes");
@@ -194,7 +226,7 @@ YCMD: changelog(playerid1, params[], help)
 				strcat(str, COL_PRIM"\n\nif you find any bug please let me know");
 				strcat(str, "{CCCCCC}\nAll the updates from this changelog have been coded by " COL_PRIM "Shooter (Zantetsuken#2220)");
 			}
-			case 12:
+			case 14:
 			{
 				strcat(str, COL_PRIM"\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 				strcat(str, COL_SEC"\n   1.36 Features and fixes");
@@ -238,7 +270,7 @@ YCMD: changelog(playerid1, params[], help)
 		Dialog_ShowCallback(playerid1, using inline InlineShowChanges, DIALOG_STYLE_MSGBOX, va_return("%s gamemode " COL_PRIM "updates", GM_NAME), str, "OK", "");
 	}
 	Dialog_ShowCallback(
-		playerid1, using inline InlineVersionSelect, DIALOG_STYLE_LIST, COL_SEC "Select a gamemode version to see the introduced changes", "1.37.10\n1.37.9\n1.37.8\n1.37.7\n1.37.6\n1.37.5 (no anticheats)\n1.37.5\n1.37.4\n1.37.3\n1.37.2\n1.37.1\n1.37.0\n1.36", "Select",
+		playerid1, using inline InlineVersionSelect, DIALOG_STYLE_LIST, COL_SEC "Select a gamemode version to see the introduced changes", "1.38.0\n1.37.11\n1.37.10\n1.37.9\n1.37.8\n1.37.7\n1.37.6\n1.37.5 (no anticheats)\n1.37.5\n1.37.4\n1.37.3\n1.37.2\n1.37.1\n1.37.0\n1.36", "Select",
 		"Cancel");
 	return 1;
 }

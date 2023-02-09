@@ -37,21 +37,21 @@ YCMD: dm(playerid, params[], help)
 	Player[playerid][IgnoreSpawn] = true; //Make sure you ignore OnPlayerSpawn, else you will just spawn in lobby (because u are about to use SpawnPlayer).
 	SpawnPlayer(playerid);				  //Spawns players, in this case we have SetSpawnInfo (but still you need to make sure OnPlayerSpawn is ignored);
 	SetPlayerInterior(playerid, DMInterior[DMID]);
-	SetPlayerTeam(playerid, playerid);
+	SetPlayerTeam(playerid, NO_TEAM);
 
 	// If the second and third weapons are punch or no weapons then it'll show you just one weapon instead of saying (Deagle - Punch - Punch)
 	if (DMWeapons[DMID][1] == 0 && DMWeapons[DMID][2] == 0)
-		va_SendClientMessageToAll(-1, "{FFFFFF}%s " COL_PRIM "has entered DM %d {FFFFFF}(%s).", Player[playerid][Name], DMID, WeaponNames[DMWeapons[DMID][0]]);
+		va_SendClientMessageToAll(-1, "%s " COL_PRIM "has entered DM %d {FFFFFF}(%s).", Player[playerid][Name], DMID, ReturnWeaponName(DMWeapons[DMID][0]));
 	//If only the third weapons is punch then it'll show two weapons e.g. (Deagle - Shotgun) instead of (Deagle - Shotgun - Punch)
 	else if (DMWeapons[DMID][2] == 0)
 		va_SendClientMessageToAll(
-			-1, "{FFFFFF}%s " COL_PRIM "has entered DM %d {FFFFFF}(%s - %s).", Player[playerid][Name], DMID, WeaponNames[DMWeapons[DMID][0]],
-			WeaponNames[DMWeapons[DMID][1]]);
+			-1, "%s " COL_PRIM "has entered DM %d {FFFFFF}(%s - %s).", Player[playerid][Name], DMID, ReturnWeaponName(DMWeapons[DMID][0]),
+			ReturnWeaponName(DMWeapons[DMID][1]));
 	//If all the weapons are known then it'll show u all three weapons e.g. (Deagle - Shotgun - Sniper)
 	else
 		va_SendClientMessageToAll(
-			-1, "{FFFFFF}%s " COL_PRIM "has entered DM %d {FFFFFF}(%s - %s - %s).", Player[playerid][Name], DMID, WeaponNames[DMWeapons[DMID][0]],
-			WeaponNames[DMWeapons[DMID][1]], WeaponNames[DMWeapons[DMID][2]]);
+			-1, "%s " COL_PRIM "has entered DM %d {FFFFFF}(%s - %s - %s).", Player[playerid][Name], DMID, ReturnWeaponName(DMWeapons[DMID][0]),
+			ReturnWeaponName(DMWeapons[DMID][1]), ReturnWeaponName(DMWeapons[DMID][2]));
 
 	if (Player[playerid][BeingSpeced])
 	{

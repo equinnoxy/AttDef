@@ -179,14 +179,14 @@ CreateDeadBody(playerid, killerid, reason, Float: distance = 0.0, Float: x = 0.0
 	{
 		case INVALID_PLAYER_ID:
 		{
-			format(str, sizeof str, "Dead body of: %s\nReason: %s", Player[playerid][Name], WeaponNames[reason]);
-			new Text3D: textlabel = Create3DTextLabel(str, color, x, y, z - 0.3, 20.0, worldid, 1);
+			format(str, sizeof str, "Dead body of: %s\nReason: %s", Player[playerid][Name], ReturnWeaponName(reason));
+			new Text3D: textlabel = Create3DTextLabel(str, color, x, y, z - 0.3, 20.0, worldid, true);
 			Iter_Add(DeadBodyLabels, _: textlabel);
 		}
 		default:
 		{
-			format(str, sizeof str, "Dead body of: %s\nMurderer: %s\nDistance: %.1f\nReason: %s", Player[playerid][Name], Player[killerid][Name], distance, WeaponNames[reason]);
-			new Text3D: textlabel = Create3DTextLabel(str, color, x, y, z - 0.3, 20.0, worldid, 1);
+			format(str, sizeof str, "Dead body of: %s\nMurderer: %s\nDistance: %.1f\nReason: %s", Player[playerid][Name], Player[killerid][Name], distance, ReturnWeaponName(reason));
+			new Text3D: textlabel = Create3DTextLabel(str, color, x, y, z - 0.3, 20.0, worldid, true);
 			Iter_Add(DeadBodyLabels, _: textlabel);
 		}
 	}
@@ -228,7 +228,7 @@ CheckPlayerNet(playerid)
 			va_SendClientMessageToAll(
 				-1,
 				"{FFFFFF}%s " COL_PRIM "has been kicked from the server .: {FFFFFF}Low FPS | %d/%d " COL_PRIM ":.", Player[playerid][Name], pFPS, Min_FPS);
-			SetTimerEx("OnPlayerKicked", 500, false, "i", playerid);
+			SetTimerEx("OnPlayerKicked", pPing + 10, false, "i", playerid);
 		}
 	}
 	else
@@ -246,7 +246,7 @@ CheckPlayerNet(playerid)
 			va_SendClientMessageToAll(
 				-1, "{FFFFFF}%s " COL_PRIM "has been kicked from the server .: {FFFFFF}High Packetloss | %.2f/%.2f " COL_PRIM ":.", Player[playerid][Name],
 						pPL, Max_Packetloss);
-			SetTimerEx("OnPlayerKicked", 500, false, "i", playerid);
+			SetTimerEx("OnPlayerKicked", pPing + 10, false, "i", playerid);
 		}
 	}
 	else
@@ -264,7 +264,7 @@ CheckPlayerNet(playerid)
 			va_SendClientMessageToAll(
 				-1, "{FFFFFF}%s " COL_PRIM "has been kicked from the server .: {FFFFFF}High Ping | %d/%d " COL_PRIM ":.", Player[playerid][Name], pPing,
 						Max_Ping);
-			SetTimerEx("OnPlayerKicked", 500, false, "i", playerid);
+			SetTimerEx("OnPlayerKicked", pPing + 10, false, "i", playerid);
 		}
 	}
 	else
@@ -342,18 +342,6 @@ public SpawnConnectedPlayer(playerid, team)
 	SetPlayerWeather(playerid, Player[playerid][Weather]);
 	SetPlayerTime(playerid, Player[playerid][Time], 0);
 
-	ShowPlayerProgressBar(playerid, HealthBar[playerid]);
-	if (PlayerInterface[playerid][INTERFACE_HP])
-	{
-		PlayerTextDrawShow(playerid, HPTextDraw_TD[playerid]);
-		PlayerTextDrawShow(playerid, ArmourTextDraw[playerid]);
-	}
-	else
-	{
-		PlayerTextDrawHide(playerid, HPTextDraw_TD[playerid]);
-		PlayerTextDrawHide(playerid, ArmourTextDraw[playerid]);
-	}
-
 	PlayerTextDrawShow(playerid, BaseID_VS[playerid]);
 
 	if (PlayerInterface[playerid][INTERFACE_NET])
@@ -377,8 +365,6 @@ public SpawnConnectedPlayer(playerid, team)
 	TextDrawShowForPlayer(playerid, DefHpLose);
 
 	PlayerTextDrawShow(playerid, TD_RoundSpec[playerid]);
-	PlayerTextDrawShow(playerid, HPTextDraw_TD[playerid]);
-	PlayerTextDrawShow(playerid, ArmourTextDraw[playerid]);
 	PlayerTextDrawShow(playerid, BaseID_VS[playerid]);
 
 	if (WarMode)
@@ -542,8 +528,8 @@ ShowTargetInfo(playerid, targetid)
 	TargetInfoData[playerid][TargetInfoTimer] = SetTimerEx("HideTargetInfo", 5000, false, "i", playerid);
 
 	va_PlayerTextDrawSetString(playerid, TargetInfoData[playerid][TargetInfoTD], "%sName: %s%s~n~%sPing: %s%d   %sFPS: %s%d~n~%sPL: %s%.1f   %sHP: %s%d", MAIN_TEXT_COLOUR, TDC[Player[targetid][Team]], Player[targetid][NameWithoutTag],
-		MAIN_TEXT_COLOUR, TDC[Player[targetid][Team]], GetPlayerPing(targetid), MAIN_TEXT_COLOUR, TDC[Player[targetid][Team]], GetPlayerFPS(playerid), MAIN_TEXT_COLOUR,
-		TDC[Player[targetid][Team]], NetStats_PacketLossPercent(targetid), MAIN_TEXT_COLOUR, TDC[Player[targetid][Team]], Player[targetid][pHealth] + Player[targetid][pArmour]);
+		MAIN_TEXT_COLOUR, TDC[Player[targetid][Team]], GetPlayerPing(targetid), MAIN_TEXT_COLOUR, TDC[Player[targetid][Team]], GetPlayerFPS(targetid), MAIN_TEXT_COLOUR,
+		TDC[Player[targetid][Team]], NetStats_PacketLossPercent(targetid), MAIN_TEXT_COLOUR, TDC[Player[targetid][Team]], GetHP(targetid) + GetAP(targetid));
 
 	PlayerTextDrawShow(playerid, TargetInfoData[playerid][TargetInfoTD]);
 	TargetInfoData[playerid][TargetInfoLastTick]   = currentTick;
@@ -581,9 +567,9 @@ bool: IsValidSound(soundid)
 
 GetWeaponID(const weaponname[])
 {
-	for (new i = 0; i < 55; ++i)
+	for (new i = 0; i < sizeof(g_WeaponName); ++i)
 	{
-		if (strfind(WeaponNames[i], weaponname, true) != -1)
+		if (strfind(g_WeaponName[i], weaponname, true) != -1)
 			return i;
 	}
 	return -1;
@@ -673,6 +659,40 @@ bool: DoesPlayerHaveWeapon(playerid, weaponid)
 	GetPlayerWeaponData(playerid, GetWeaponSlot(weaponid), wep, ammo);
 	return wep == weaponid && ammo > 0;
 }
+
+#if defined _YSF_included
+RemovePlayerWeapon(playerid, weaponid)
+{
+	if(!DoesPlayerHaveWeapon(playerid, weaponid))
+		return 0;
+
+	new plyWeapons[12];
+	new plyAmmo[12], armedID;
+
+	new wep, ammo;
+	for(new slot = 0; slot != 12; slot++)
+	{
+		GetPlayerWeaponData(playerid, slot, wep, ammo);
+
+		if(wep != weaponid)
+		{
+			GetPlayerWeaponData(playerid, slot, plyWeapons[slot], plyAmmo[slot]);
+		}
+	}
+
+	armedID = GetPlayerWeapon(playerid);
+
+	ResetPlayerWeapons(playerid);
+	for(new slot = 0; slot != 12; slot++)
+	{
+		GivePlayerWeapon(playerid, plyWeapons[slot], plyAmmo[slot]);
+	}
+
+	if( armedID != weaponid ) SetPlayerArmedWeapon(playerid,armedID); //give last armedweapon
+	else SetPlayerArmedWeapon(playerid,0);//give fist if player armed weapon was knife
+	return 1;
+}
+#endif 
 
 GetCardinalPoint(Float: degree)
 {
@@ -1145,69 +1165,7 @@ ClearKillList()
 	for (new i = 0; i < 5; i++) { SendDeathMessage(255, 50, 255); }
 }
 
-/*
-	whatvehicles:
-	0 to destroy all dynamic (spawned) vehicles
-	1 to destroy unoccupied vehicles only
-	2 to destroy occupied vehicles only
-*/
-DestroyDynamicVehicles(whatvehicles)
-{
-	switch (whatvehicles)
-	{
-		case 0: // all
-		{
-			foreach (new i : DynamicVehicle)
-			{
-				RemoveVehicle(i, false);
-				Iter_SafeRemove(DynamicVehicle, i, i);
-			}
-		}
-		case 1: // unoccupied only
-		{
-			new bool: foundDriver;
-			foreach (new i : DynamicVehicle)
-			{
-				foundDriver = false;
-				foreach (new j : Player)
-				{
-					if (GetPlayerVehicleID(j) == i && GetPlayerState(j) == PLAYER_STATE_DRIVER)
-					{
-						foundDriver = true;
-						break;
-					}
-				}
-				if (!foundDriver)
-				{
-					RemoveVehicle(i, false);
-					Iter_SafeRemove(DynamicVehicle, i, i);
-				}
-			}
-		}
-		case 2: // occupied only
-		{
-			new bool: foundDriver;
-			foreach (new i : DynamicVehicle)
-			{
-				foundDriver = false;
-				foreach (new j : Player)
-				{
-					if (GetPlayerVehicleID(j) == i && GetPlayerState(j) == PLAYER_STATE_DRIVER)
-					{
-						foundDriver = true;
-						break;
-					}
-				}
-				if (foundDriver)
-				{
-					RemoveVehicle(i, false);
-					Iter_SafeRemove(DynamicVehicle, i, i);
-				}
-			}
-		}
-	}
-	return 1;
-}
+DestroyUnusedVehicles() { FreezeV_DestroyAll(); }
 
 forward ForceRespectate(playerid);
 public ForceRespectate(playerid)
@@ -1222,50 +1180,23 @@ SyncPlayer(playerid)
 	new currentTick = GetTickCount();
 	if (currentTick - Player[playerid][LastTimeSynced] < 1000)
 		return 1;
-	Player[playerid][LastTimeSynced] = currentTick;
-	if (currentTick - Player[playerid][LastEnterVehicleAttempt] < 5000)
+	if (GetPlayerState(playerid) != PLAYER_STATE_ONFOOT)
 		return 1;
-	if (Player[playerid][Spectating])
+	if (GBUG_IsPerformingEntering(playerid))
 		return 1;
 	if ((RoundPaused || !AllowSync) && Player[playerid][Playing])
 		return 1;
-	if (GetPlayerVehicleID(playerid))
-		return 1;
 	if (Player[playerid][OnGunmenu])
 		return SendErrorMessage(playerid, "Can't sync while in gunmenu");
-	if (Player[playerid][IsAFK] || Player[playerid][IsFrozen])
+	if (Player[playerid][IsAFK] || !IsPlayerControllable(playerid))
 		return SendErrorMessage(playerid, "Can't sync while frozen or in AFK mode");
 
+	Player[playerid][LastTimeSynced] = currentTick;
 	// Set spectators to re-spectate
 	if (Player[playerid][BeingSpeced])
-		SetTimerEx("ForceRespectate", 1000, false, "i", playerid);
+		SetTimerEx("ForceRespectate", GetPlayerPing(playerid) + 10, false, "i", playerid);
 
-	// Store info before re-spawn
-	new Float: x,Float: y, Float: z, Float: r,
-		Float: vX, Float: vY, Float: vZ,
-		CurrWep;
-	CurrWep = GetPlayerWeapon(playerid);
-	GetPlayerPos(playerid, x, y, z);
-	GetPlayerFacingAngle(playerid, r);
-	GetPlayerVelocity(playerid, vX, vY, vZ);
-	new Weapons[13][2];
-	for (new i = 0; i < 13; i++) GetPlayerWeaponData(playerid, i, Weapons[i][0], Weapons[i][1]);
-
-	// Set spawn info and spawn player
-	SetSpawnInfo(playerid, GetPlayerTeam(playerid), GetPlayerSkin(playerid), x, y, z - 0.4, r, 0, 0, 0, 0, 0, 0);
-	Player[playerid][IgnoreSpawn] = true;
-	SpawnPlayer(playerid);
-
-	// Set info back after re-spawn
-	SetHP(playerid, Player[playerid][pHealth]);
-	SetAP(playerid, Player[playerid][pArmour]);
-	SetPlayerInterior(playerid, GetPlayerInterior(playerid));
-	SetPlayerVirtualWorld(playerid, GetPlayerVirtualWorld(playerid));
-	for (new i = 0; i < 13; i++) GivePlayerWeapon(playerid, Weapons[i][0], Weapons[i][1]);
-	SetPlayerArmedWeapon(playerid, CurrWep);
-
-	if (!SyncAbuse)
-		SetPlayerVelocity(playerid, vX, vY, vZ);
+	ResyncPlayer(playerid);
 	return 1;
 }
 

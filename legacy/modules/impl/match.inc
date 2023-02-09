@@ -51,6 +51,7 @@ hook OnPlayerDisconnect(playerid, reason)
 	// Call OnPlayerLeaveCheckpoint to see if this player was in the checkpoint and fix issues
 	if (Current != -1)
 		CallLocalFunction("OnPlayerLeaveCheckpoint", "i", playerid);
+	return 1;
 }
 
 hook OnGameModeInit()
@@ -296,7 +297,7 @@ UpdateTeamHP(teamid, exception = -1)
 			continue; // Skip this index
 
 		// Add total HP of this player (at this index) to team total HP
-		TeamHP[teamid] += Player[i][pHealth] + Player[i][pArmour];
+		TeamHP[teamid] += GetHP(i) + GetAP(i);
 	}
 	// Update round textdraws with correct info
 	new str[150];
@@ -419,16 +420,14 @@ public GameLoopCallback()
 					{
 						SendClientMessageToAll(
 							-1,
-							va_return(
-								"{FFFFFF}%s " COL_PRIM "has been removed for not staying in Arena. {FFFFFF}(%d | %d)", Player[i][Name], Player[i][pHealth], Player[i][pArmour]));
+							"{FFFFFF}%s " COL_PRIM "has been removed for not staying in Arena. {FFFFFF}(%d | %d)", Player[i][Name], GetHP(i), GetAP(i));
 
 						Player[i][OutOfArena] = MAX_ZONE_LIMIT_WARNINGS;
 
 						PlayerTextDrawHide(i, AreaCheckTD[i]);
 						PlayerTextDrawHide(i, AreaCheckBG[i]);
-						new tmp = i;
-						Iter_SafeRemove(PlayersInRound, i, i);
-						RemovePlayerFromRound(tmp, false);
+						Iter_Remove(PlayersInRound, i);
+						RemovePlayerFromRound(i, false);
 						break;
 					}
 				}
@@ -655,12 +654,7 @@ public UnpauseRound()
 				Player[i][ToGiveParachute] = false;
 			}
 		}
-		foreach (new g : DynamicVehicle)
-		{
-			SetVehicleVelocity(g, VehicleVelc[g][0], VehicleVelc[g][1], VehicleVelc[g][2]);
-		}
-		KillTimer(PauseAirVehicles_Timer);
-		Iter_Clear(TempAirVehicles);
+		FreezeV_UnpauseRound();
 
 		RoundPaused	   = false;
 		RoundUnpausing = false;
@@ -677,17 +671,6 @@ public UnpauseRound()
 	return 1;
 }
 
-forward PauseAirVehicles_Handler();
-public PauseAirVehicles_Handler()
-{
-	if (Iter_Count(TempAirVehicles) == 0)
-		return KillTimer(PauseAirVehicles_Timer);
-
-	foreach (new i : TempAirVehicles)
-		SetVehiclePos(i, TempAirVehicles_Pos[i][0], TempAirVehicles_Pos[i][1], TempAirVehicles_Pos[i][2]);
-	return 1;
-}
-
 forward PauseStopWatch();
 public PauseStopWatch()
 {
@@ -698,19 +681,7 @@ public PauseStopWatch()
 
 PauseRound()
 {
-	new airVehiclesFound = 0;
-	foreach (new g : DynamicVehicle)
-	{
-		if (IsAirVehicle(g))
-		{
-			airVehiclesFound++;
-			GetVehiclePos(g, TempAirVehicles_Pos[g][0], TempAirVehicles_Pos[g][1], TempAirVehicles_Pos[g][2]);
-			Iter_Add(TempAirVehicles, g);
-		}
-		GetVehicleVelocity(g, VehicleVelc[g][0], VehicleVelc[g][1], VehicleVelc[g][2]);
-	}
-	if (airVehiclesFound != 0)
-		PauseAirVehicles_Timer = SetTimer("PauseAirVehicles_Handler", 50, true);
+	FreezeV_PauseRound();
 
 	if (TipTimerDuringPause)
 		KillTimer(TipTimerDuringPause);
@@ -903,7 +874,7 @@ PlayerRequestBackup(playerid)
 		return 0; // fail
 
 	// Calculate the player's total HP
-	new totHP = Player[playerid][pHealth] + Player[playerid][pArmour];
+	new totHP = GetHP(playerid) + GetAP(playerid);
 
 	// Get the player's facing angle
 	new Float: facingAngle;
@@ -1016,7 +987,7 @@ public HideHpTextForAtt()
 	TextDrawSetString(TeamHpLose[0], " ");
 	TextDrawSetString(AttHpLose, " ");
 	StopModernTextDrawFlash(ATTACKER);
-	TempDamage[ATTACKER] = 0;
+	TempDamage[ATTACKER] = 0.0;
 	return 1;
 }
 
@@ -1027,7 +998,7 @@ public HideHpTextForDef()
 	TextDrawSetString(TeamHpLose[1], " ");
 	TextDrawSetString(DefHpLose, " ");
 	StopModernTextDrawFlash(DEFENDER);
-	TempDamage[DEFENDER] = 0;
+	TempDamage[DEFENDER] = 0.0;
 	return 1;
 }
 
@@ -1058,8 +1029,8 @@ public OnPlayerReplace(ToAddID, ToReplaceID, playerid)
 	GetPlayerPos(ToReplaceID, Pos[0], Pos[1], Pos[2]);
 	GetPlayerFacingAngle(ToReplaceID, Pos[3]);
 
-	GetHP(ToReplaceID, HP[0]);
-	GetAP(ToReplaceID, HP[1]);
+	HP[0] = GetHP(ToReplaceID);
+	HP[1] = GetAP(ToReplaceID);
 
 	new Weapons[13], Ammo[13];
 	for (new i = 0; i < 13; i++) { GetPlayerWeaponData(ToReplaceID, i, Weapons[i], Ammo[i]); }
@@ -1068,8 +1039,8 @@ public OnPlayerReplace(ToAddID, ToReplaceID, playerid)
 	Player[ToAddID][WasInBase] = true;
 	Iter_Add(PlayersInRound, ToAddID);
 
-	Player[ToAddID][Team]	   = Player[ToReplaceID][Team];
 	Player[ToAddID][WasInTeam] = Player[ToAddID][Team];
+	Player[ToAddID][Team]	   = Player[ToReplaceID][Team];
 	SwitchTeamFix(ToAddID, false, false, true);
 
 	SetSpawnInfo(ToAddID, Player[ToAddID][Team], Skin[Player[ToAddID][Team]], Pos[0], Pos[1], Pos[2] + 1, Pos[3], 0, 0, 0, 0, 0, 0);
@@ -1083,7 +1054,7 @@ public OnPlayerReplace(ToAddID, ToReplaceID, playerid)
 	SetPlayerFacingAngle(ToAddID, Pos[3]);
 	SetPlayerInterior(ToAddID, GetPlayerInterior(ToReplaceID));
 	SetPlayerVirtualWorld(ToAddID, GetPlayerVirtualWorld(ToReplaceID));
-	SetPlayerTeam(ToAddID, Player[ToAddID][Team]);
+	SetPlayerTeam(ToAddID, NO_TEAM);
 
 	ColorFix(ToAddID);
 
@@ -1132,8 +1103,8 @@ public OnPlayerInGameReplace(ToAddID, i, playerid)
 	Player[ToAddID][WasInBase] = true;
 	Iter_Add(PlayersInRound, ToAddID);
 
-	Player[ToAddID][Team]		= SaveVariables[i][pTeam];
-	Player[playerid][WasInTeam] = Player[ToAddID][Team];
+	Player[ToAddID][WasInTeam] = Player[ToAddID][Team];
+	Player[ToAddID][Team]	   = SaveVariables[i][pTeam];
 	SwitchTeamFix(ToAddID, false, false, true);
 
 	if (!SaveVariables[i][WasCrashedInStart])
@@ -1186,7 +1157,7 @@ public OnPlayerInGameReplace(ToAddID, i, playerid)
 	SetHP(ToAddID, SaveVariables[i][gHealth]);
 	SetAP(ToAddID, SaveVariables[i][gArmour]);
 
-	SetPlayerTeam(ToAddID, Player[ToAddID][Team]);
+	SetPlayerTeam(ToAddID, NO_TEAM);
 
 	ColorFix(ToAddID);
 	SetCPForPlayer(ToAddID);
@@ -1221,16 +1192,6 @@ public OnPlayerInGameReplace(ToAddID, i, playerid)
 	return 1;
 }
 
-/* Note:
-	set remove_iterator to false if you're using this in a loop
-	and safely remove, for example
-
-	foreach(new i : PlayersInRound)
-	{
-		RemovePlayerFromRound(i, false);
-		Iter_SafeRemove(PlayersInRound, i, i);
-	}
-*/
 RemovePlayerFromRound(playerid, bool: remove_iterator = true)
 {
 	Player[playerid][Playing] = false;
@@ -1275,7 +1236,7 @@ ResetPlayerRoundVariables(playerid, bool: resetTotals = false)
 	{
 		Player[playerid][TotalKills]		= 0;
 		Player[playerid][TotalDeaths]		= 0;
-		Player[playerid][TotalDamage]		= 0;
+		Player[playerid][TotalDamage]		= 0.0;
 		Player[playerid][RoundPlayed]		= 0;
 		Player[playerid][TotalBulletsFired] = 0;
 		Player[playerid][TotalshotsHit]		= 0;
@@ -1284,7 +1245,7 @@ ResetPlayerRoundVariables(playerid, bool: resetTotals = false)
 	{
 		Player[playerid][RoundKills]  = 0;
 		Player[playerid][RoundDeaths] = 0;
-		Player[playerid][RoundDamage] = 0;
+		Player[playerid][RoundDamage] = 0.0;
 		Player[playerid][shotsHit]	  = 0;
 	}
 }
@@ -1297,7 +1258,7 @@ ResetRoundVariablesInSlots()
 		{
 			SaveVariables[i][RKills]	 = 0;
 			SaveVariables[i][RDeaths]	 = 0;
-			SaveVariables[i][RDamage]	 = 0;
+			SaveVariables[i][RDamage]	 = 0.0;
 			SaveVariables[i][sWasInBase] = false;
 		}
 	}
@@ -1324,7 +1285,7 @@ public OnRCStart()
 	RCArena		= true;
 	new ArenaID = 72;		   // That's the ID of the RC arena (interior)
 	ClearKillList();		   // Clears the kill-list.
-	DestroyDynamicVehicles(1); // Destroys vehicles
+	DestroyUnusedVehicles(); // Destroys vehicles
 	DeleteAllDeadBodies();
 	GameType = ARENA;
 	Current	 = ArenaID; // Current will be the ID of the base that we just started. We do this so that we can use this ID later on (e.g. check /car command for the use).
@@ -1364,7 +1325,6 @@ public OnRCStart()
 
 	foreach (new i : Player)
 	{
-		Player[i][LastVehicle] = -1;
 		Player[i][WasInCP]	   = false;
 
 		ShowRoundStats(i);
@@ -1404,11 +1364,10 @@ public OnRCStart()
 	ViewRoundCountdown = 4;
 	ViewRCForPlayers();
 
-	format(iString, sizeof(iString), "%s: %d - %s: %d", TeamName[ATTACKER], TeamScore[ATTACKER], TeamName[DEFENDER], TeamScore[DEFENDER]);
-	SetGameModeText(iString);
-
 	if (WarMode)
 	{
+		format(iString, sizeof(iString), "%s: %d - %s: %d", TeamName[ATTACKER], TeamScore[ATTACKER], TeamName[DEFENDER], TeamScore[DEFENDER]);
+		SetGameModeText(iString);
 		MatchRoundsStarted++;
 		if (MatchRoundsStarted > 100)
 			MatchRoundsStarted = 1;
@@ -1535,7 +1494,7 @@ SpawnPlayersInRC()
 
 					SetPlayerColor(i, ATTACKER_PLAYING);
 					SpawnPlayer(i);
-					SetPlayerTeam(i, 1);
+					SetPlayerTeam(i, NO_TEAM);
 
 					ShowTeamBarsForPlayer(i);
 				}
@@ -1552,7 +1511,7 @@ SpawnPlayersInRC()
 
 					SetPlayerColor(i, DEFENDER_PLAYING);
 					SpawnPlayer(i);
-					SetPlayerTeam(i, 2);
+					SetPlayerTeam(i, NO_TEAM);
 
 					ShowTeamBarsForPlayer(i);
 				}
@@ -1604,7 +1563,7 @@ public OnArenaStart(ArenaID)
 	PreStartRoundTimer = 0;
 	AutoAFKCheck();			   // Checks all players and set idle players to afk mode
 	ClearKillList();		   // Clears the kill-list.
-	DestroyDynamicVehicles(1); // Destroys vehicles
+	DestroyUnusedVehicles(); // Destroys vehicles
 	DeleteAllDeadBodies();
 	GameType = ARENA;
 	RCArena	 = false;
@@ -1639,7 +1598,6 @@ public OnArenaStart(ArenaID)
 
 	foreach (new i : Player)
 	{
-		Player[i][LastVehicle] = -1;
 		Player[i][WasInCP]	   = false;
 
 		ShowRoundStats(i);
@@ -1680,11 +1638,10 @@ public OnArenaStart(ArenaID)
 	ViewRoundCountdown = 4;
 	ViewArenaForPlayers();
 
-	format(iString, sizeof(iString), "%s: %d - %s: %d", TeamName[ATTACKER], TeamScore[ATTACKER], TeamName[DEFENDER], TeamScore[DEFENDER]);
-	SetGameModeText(iString);
-
 	if (WarMode)
 	{
+		format(iString, sizeof(iString), "%s: %d - %s: %d", TeamName[ATTACKER], TeamScore[ATTACKER], TeamName[DEFENDER], TeamScore[DEFENDER]);
+		SetGameModeText(iString);
 		MatchRoundsStarted++;
 		if (MatchRoundsStarted > 100)
 			MatchRoundsStarted = 1;
@@ -1815,7 +1772,7 @@ SpawnPlayersInArena()
 
 					SetPlayerColor(i, ATTACKER_PLAYING);
 					SpawnPlayer(i);
-					SetPlayerTeam(i, 1);
+					SetPlayerTeam(i, NO_TEAM);
 
 					ShowTeamBarsForPlayer(i);
 				}
@@ -1832,7 +1789,7 @@ SpawnPlayersInArena()
 
 					SetPlayerColor(i, DEFENDER_PLAYING);
 					SpawnPlayer(i);
-					SetPlayerTeam(i, 2);
+					SetPlayerTeam(i, NO_TEAM);
 
 					ShowTeamBarsForPlayer(i);
 				}
@@ -1889,10 +1846,18 @@ public AddPlayerToArena(playerid)
 		Player[playerid][DMReadd] = 0;
 	}
 
-	if (Player[playerid][LastVehicle] != -1)
+	if (Player[playerid][LastVehicle])
 	{
-		RemoveVehicle(Player[playerid][LastVehicle]);
-		Player[playerid][LastVehicle] = -1;
+		foreach (new i : VehicleDriver(Player[playerid][LastVehicle]))
+		{
+			RemovePlayerFromVehicle(i);
+		}
+		foreach (new i : VehiclePassenger(Player[playerid][LastVehicle]))
+		{
+			RemovePlayerFromVehicle(i);
+		}
+		DestroyVehicle(Player[playerid][LastVehicle]);
+		Player[playerid][LastVehicle] = 0;
 	}
 
 	if (!Player[playerid][FakePacketRenovation] && Player[playerid][NetCheck] && NetStats_GetConnectedTime(playerid) < 300000)
@@ -1937,7 +1902,7 @@ public AddPlayerToArena(playerid)
 			SpawnPlayer(playerid);
 			SetPlayerColor(playerid, ATTACKER_PLAYING);
 
-			SetPlayerTeam(playerid, 1);
+			SetPlayerTeam(playerid, NO_TEAM);
 
 			ShowTeamBarsForPlayer(playerid);
 		}
@@ -1949,7 +1914,7 @@ public AddPlayerToArena(playerid)
 
 			SpawnPlayer(playerid);
 			SetPlayerColor(playerid, DEFENDER_PLAYING);
-			SetPlayerTeam(playerid, 2);
+			SetPlayerTeam(playerid, NO_TEAM);
 
 			ShowTeamBarsForPlayer(playerid);
 		}
@@ -1960,7 +1925,7 @@ public AddPlayerToArena(playerid)
 				0, 0, 0, 0, 0, 0);
 			SpawnPlayer(playerid);
 			SetPlayerColor(playerid, REFEREE_COLOR);
-			SetPlayerTeam(playerid, 3);
+			SetPlayerTeam(playerid, NO_TEAM);
 		}
 	}
 
@@ -1993,9 +1958,9 @@ forward OnBaseStart(BaseID);
 public OnBaseStart(BaseID)
 {
 	PreStartRoundTimer = 0;
-	AutoAFKCheck();			   // Checks all players and set idle players to afk mode
-	ClearKillList();		   // Clears the kill-list.
-	DestroyDynamicVehicles(1); // Destroys vehicles
+	AutoAFKCheck();			 // Checks all players and set idle players to afk mode
+	ClearKillList();		 // Clears the kill-list.
+	DestroyUnusedVehicles(); // Destroys vehicles
 	DeleteAllDeadBodies();
 	GameType = BASE;
 	RCArena	 = false;
@@ -2036,8 +2001,6 @@ public OnBaseStart(BaseID)
 
 	foreach (new i : Player)
 	{
-		Player[i][LastVehicle] = -1;
-
 		ShowRoundStats(i);
 		Player[i][WasInCP] = false;
 
@@ -2079,11 +2042,10 @@ public OnBaseStart(BaseID)
 	format(iString, sizeof(iString), "mapname Base: %d", Current); //Will change the map name in samp.exe to your base id (e.g. Base: 4)
 	SendRconCommand(iString);
 
-	format(iString, sizeof(iString), "%s: %d - %s: %d", TeamName[ATTACKER], TeamScore[ATTACKER], TeamName[DEFENDER], TeamScore[DEFENDER]);
-	SetGameModeText(iString);
-
 	if (WarMode)
 	{
+		format(iString, sizeof(iString), "%s: %d - %s: %d", TeamName[ATTACKER], TeamScore[ATTACKER], TeamName[DEFENDER], TeamScore[DEFENDER]);
+		SetGameModeText(iString);
 		MatchRoundsStarted++;
 		if (MatchRoundsStarted > 100)
 			MatchRoundsStarted = 1;
@@ -2268,7 +2230,7 @@ SpawnPlayersInBase()
 					SetPlayerColor(i, ATTACKER_PLAYING);
 					SpawnPlayer(i);
 					SetPlayerMapIcon(i, 59, BAttackerSpawn[Current][0], BAttackerSpawn[Current][1], BAttackerSpawn[Current][2], 59, 0, MAPICON_GLOBAL);
-					SetPlayerTeam(i, ATTACKER);
+					SetPlayerTeam(i, NO_TEAM);
 
 					DisableRemoteVehicleCollisions(i, 1);
 					SetTimerEx("EnableVehicleCollisions", 15000, false, "i", i);
@@ -2292,7 +2254,7 @@ SpawnPlayersInBase()
 					SetCPForPlayer(i);
 					SetPlayerColor(i, DEFENDER_PLAYING);
 					SpawnPlayer(i);
-					SetPlayerTeam(i, DEFENDER);
+					SetPlayerTeam(i, NO_TEAM);
 
 					ShowTeamBarsForPlayer(i);
 				}
@@ -2356,10 +2318,19 @@ public AddPlayerToBase(playerid)
 		Player[playerid][InDM]	  = false;
 		Player[playerid][DMReadd] = 0;
 	}
-	if (Player[playerid][LastVehicle] != -1)
+
+	if (Player[playerid][LastVehicle])
 	{
-		RemoveVehicle(Player[playerid][LastVehicle]);
-		Player[playerid][LastVehicle] = -1;
+		foreach (new i : VehicleDriver(Player[playerid][LastVehicle]))
+		{
+			RemovePlayerFromVehicle(i);
+		}
+		foreach (new i : VehiclePassenger(Player[playerid][LastVehicle]))
+		{
+			RemovePlayerFromVehicle(i);
+		}
+		DestroyVehicle(Player[playerid][LastVehicle]);
+		Player[playerid][LastVehicle] = 0;
 	}
 
 	if (!Player[playerid][WasInBase])
@@ -2403,7 +2374,7 @@ public AddPlayerToBase(playerid)
 			SetCPForPlayer(playerid);
 			SetPlayerColor(playerid, ATTACKER_PLAYING);
 			SetPlayerMapIcon(playerid, 59, BAttackerSpawn[Current][0], BAttackerSpawn[Current][1], BAttackerSpawn[Current][2], 59, 0, MAPICON_GLOBAL);
-			SetPlayerTeam(playerid, ATTACKER);
+			SetPlayerTeam(playerid, NO_TEAM);
 
 			ShowTeamBarsForPlayer(playerid);
 		}
@@ -2415,7 +2386,7 @@ public AddPlayerToBase(playerid)
 			SpawnPlayer(playerid);
 			SetCPForPlayer(playerid);
 			SetPlayerColor(playerid, DEFENDER_PLAYING);
-			SetPlayerTeam(playerid, DEFENDER);
+			SetPlayerTeam(playerid, NO_TEAM);
 
 			ShowTeamBarsForPlayer(playerid);
 		}
@@ -2427,7 +2398,7 @@ public AddPlayerToBase(playerid)
 			SpawnPlayer(playerid);
 			SetCPForPlayer(playerid);
 			SetPlayerColor(playerid, REFEREE_COLOR);
-			SetPlayerTeam(playerid, REFEREE);
+			SetPlayerTeam(playerid, NO_TEAM);
 		}
 	}
 
@@ -2484,16 +2455,11 @@ EndRound(WinID) //WinID: 0 = CP, 1 = RoundTime, 2 = NoAttackersLeft, 3 = NoDefen
 	PlayersDead[ATTACKER]  = 0;
 	PlayersDead[DEFENDER]  = 0;
 
-	if (CPZone)
-	{
-		GangZoneDestroy(CPZone);
-		CPZone = 0;
-	}
-	if (ArenaZone)
-	{
-		GangZoneDestroy(ArenaZone);
-		ArenaZone = 0;
-	}
+	GangZoneDestroy(CPZone);
+	CPZone = INVALID_GANG_ZONE;
+
+	GangZoneDestroy(ArenaZone);
+	ArenaZone = INVALID_GANG_ZONE;
 
 	ResetBackupRequests();
 
@@ -2535,7 +2501,7 @@ EndRound(WinID) //WinID: 0 = CP, 1 = RoundTime, 2 = NoAttackersLeft, 3 = NoDefen
 	TextDrawSetString(rightText, iString);
 
 	SendRconCommand("mapname Lobby");
-	FixGamemodeText();
+	//FixGamemodeText();
 
 	new playerScores[MAX_PLAYERS][rankingEnum], index, p, names[MAX_PLAYERS][MAX_PLAYER_NAME];
 
@@ -2557,20 +2523,20 @@ EndRound(WinID) //WinID: 0 = CP, 1 = RoundTime, 2 = NoAttackersLeft, 3 = NoDefen
 
 					if (Player[i][Team] == ATTACKER)
 					{
-						ahpleft = ahpleft + (Player[i][pHealth] + Player[i][pArmour]);
+						ahpleft = ahpleft + (GetHP(i) + GetAP(i));
 						aalive++;
 					}
 					else if (Player[i][Team] == DEFENDER)
 					{
-						dhpleft = dhpleft + (Player[i][pHealth] + Player[i][pArmour]);
+						dhpleft = dhpleft + (GetHP(i) + GetAP(i));
 						dalive++;
 					}
 				}
-				playerScores[index][player_Score]  = Player[i][RoundDamage];
+				playerScores[index][player_Score]  = floatround(Player[i][RoundDamage]);
 				playerScores[index][player_Team]   = Player[i][Team];
 				playerScores[index][player_Kills]  = Player[i][RoundKills];
 				playerScores[index][player_Deaths] = Player[i][RoundDeaths];
-				playerScores[index][player_HP]	   = Player[i][pHealth] + Player[i][pArmour];
+				playerScores[index][player_HP]	   = GetHP(i) + GetAP(i);
 				playerScores[index][player_Acc]	   = floatround(Player[i][Accuracy], floatround_round);
 
 				if (playerScores[index][player_Deaths] > 0)
@@ -2601,7 +2567,7 @@ EndRound(WinID) //WinID: 0 = CP, 1 = RoundTime, 2 = NoAttackersLeft, 3 = NoDefen
 			PlayerTextDrawHide(i, AreaCheckTD[i]);
 			PlayerTextDrawHide(i, AreaCheckBG[i]);
 
-			if (!Player[i][InDuel])
+			if (!Player[i][InDuel] && !Player[i][InDM])
 			{
 				SetHP(i, 100);
 				SetAP(i, 100);
@@ -2618,7 +2584,7 @@ EndRound(WinID) //WinID: 0 = CP, 1 = RoundTime, 2 = NoAttackersLeft, 3 = NoDefen
 				PlayerTextDrawHide(i, DeathText[i][1]);
 			}
 
-			if (!Player[i][InDuel])
+			if (!Player[i][InDuel] && !Player[i][InDM])
 				ShowEndRoundTextDraw(i);
 			DisablePlayerCheckpoint(i);
 			SetPlayerScore(i, 0);
@@ -2631,7 +2597,7 @@ EndRound(WinID) //WinID: 0 = CP, 1 = RoundTime, 2 = NoAttackersLeft, 3 = NoDefen
 	{
 		if (SaveVariables[i][pName][0] && Current == SaveVariables[i][RoundID] && SaveVariables[i][CheckScore])
 		{
-			playerScores[index][player_Score]  = SaveVariables[i][RDamage];
+			playerScores[index][player_Score]  = floatround(SaveVariables[i][RDamage]);
 			playerScores[index][player_Team]   = SaveVariables[i][pTeam];
 			playerScores[index][player_Kills]  = SaveVariables[i][RKills];
 			playerScores[index][player_Deaths] = SaveVariables[i][RDeaths];
@@ -2648,7 +2614,7 @@ EndRound(WinID) //WinID: 0 = CP, 1 = RoundTime, 2 = NoAttackersLeft, 3 = NoDefen
 
 			SaveVariables[i][RKills]	 = 0;
 			SaveVariables[i][RDeaths]	 = 0;
-			SaveVariables[i][RDamage]	 = 0;
+			SaveVariables[i][RDamage]	 = 0.0;
 
 			SaveVariables[i][RoundID]	 = -1;
 			SaveVariables[i][CheckScore] = false;
@@ -2834,6 +2800,7 @@ EndRound(WinID) //WinID: 0 = CP, 1 = RoundTime, 2 = NoAttackersLeft, 3 = NoDefen
 forward WarEnded();
 public WarEnded()
 {
+	FixGamemodeText();
 	ClearKillList(); // Clears the kill-list.
 
 	new iString[256], TopString[3][128];
@@ -2891,14 +2858,14 @@ public WarEnded()
 
 	foreach (new i : Player)
 	{
-		if (Player[i][TotalDamage] > 0)
+		if (Player[i][TotalDamage] > 0.0)
 		{
-			playerScores[index][player_Score]	= Player[i][TotalDamage];
+			playerScores[index][player_Score]	= floatround(Player[i][TotalDamage]);
 			playerScores[index][player_Team]	= Player[i][Team];
 			playerScores[index][player_Kills]	= Player[i][TotalKills];
 			playerScores[index][player_Deaths]	= Player[i][TotalDeaths];
 			playerScores[index][player_TPlayed] = Player[i][RoundPlayed];
-			playerScores[index][player_HP]		= Player[i][pHealth] + Player[i][pArmour];
+			playerScores[index][player_HP]		= GetHP(i) + GetAP(i);
 
 			new Float: nTotalAccuracy;
 			if (Player[i][TotalBulletsFired] == 0)
@@ -2928,9 +2895,9 @@ public WarEnded()
 	}
 	for (new i = 0; i < SAVE_SLOTS; ++i)
 	{
-		if (SaveVariables[i][pName][0] && SaveVariables[i][TDamage] > 0)
+		if (SaveVariables[i][pName][0] && SaveVariables[i][TDamage] > 0.0)
 		{
-			playerScores[index][player_Score]	= SaveVariables[i][TDamage];
+			playerScores[index][player_Score]	= floatround(SaveVariables[i][TDamage]);
 			playerScores[index][player_Team]	= SaveVariables[i][pTeam];
 			playerScores[index][player_Kills]	= SaveVariables[i][TKills];
 			playerScores[index][player_Deaths]	= SaveVariables[i][TDeaths];
@@ -2954,7 +2921,7 @@ public WarEnded()
 
 			SaveVariables[i][RKills]  = 0;
 			SaveVariables[i][RDeaths] = 0;
-			SaveVariables[i][RDamage] = 0;
+			SaveVariables[i][RDamage] = 0.0;
 
 			SaveVariables[i][RoundID] = -1;
 			index++;

@@ -28,16 +28,10 @@ public OnPlayerDeathCameraEnd(playerid)
 	HideMessageBox(playerid, MSGBOX_TYPE_MIDDLE);
 	HideMessageBox(playerid, MSGBOX_TYPE_BOTTOM);
 	TextDrawHideForPlayer(playerid, RedDeathScreen);
-	if (PlayerInterface[playerid][INTERFACE_HP])
-	{
-		PlayerTextDrawShow(playerid, HPTextDraw_TD[playerid]);
-		PlayerTextDrawShow(playerid, ArmourTextDraw[playerid]);
-	}
 	PlayerTextDrawShow(playerid, RoundKillDmgTDmg[playerid]);
 	if (PlayerInterface[playerid][INTERFACE_NET])
 		PlayerTextDrawShow(playerid, FPSPingPacket[playerid]);
 	PlayerTextDrawShow(playerid, BaseID_VS[playerid]);
-	ShowPlayerProgressBar(playerid, HealthBar[playerid]);
 	if (Current != -1)
 		SetTimerEx("SpectateAnyPlayerT", 1000, false, "i", playerid);
 	return 1;
@@ -54,8 +48,6 @@ PlayDeathCamera(playerid, Float: deathX, Float: deathY, Float: deathZ, bool: dea
 	TextDrawShowForPlayer(playerid, RedDeathScreen);
 	// Hide some HUD textdraws
 	PlayerTextDrawHide(playerid, RoundKillDmgTDmg[playerid]);
-	PlayerTextDrawHide(playerid, HPTextDraw_TD[playerid]);
-	HidePlayerProgressBar(playerid, HealthBar[playerid]);
 
 	TogglePlayerSpectating(playerid, true);
 	switch (random(3))
@@ -86,12 +78,14 @@ ShowPlayerDeathQuote(playerid, duration)
 		case 1:
 			MessageBox(
 				playerid, MSGBOX_TYPE_MIDDLE, "~r~~h~~h~Winston Churchill",
-				"We shall defend our island, whatever the cost may be, we shall fight on the beaches, we shall fight on the landing grounds, we shall fight in the fields and in the streets, we shall fight in the hills; we shall never surrender",
+				"We shall defend our island, whatever the cost may be, we shall fight on the beaches, we shall fight on the landing grounds, we shall fight in the fields and in \
+				the streets, we shall fight in the hills; we shall never surrender",
 				duration);
 		case 2:
 			MessageBox(
 				playerid, MSGBOX_TYPE_MIDDLE, "~r~~h~~h~Dwight D. Eisenhower",
-				"Every gun that is made, every warship launched, every rocket fired, signifies in the final sense a theft from those who hunger and are not fed, those who are cold and are not clothed",
+				"Every gun that is made, every warship launched, every rocket fired, signifies in the final sense a theft from those who hunger and are not fed, those who are \
+				cold and are not clothed",
 				duration);
 		case 3: MessageBox(playerid, MSGBOX_TYPE_MIDDLE, "~r~~h~~h~Jean-Paul Sartre", "When the rich wage war, it's the poor who die", duration);
 		case 4:
@@ -107,7 +101,8 @@ ShowPlayerDeathQuote(playerid, duration)
 		case 11:
 			MessageBox(
 				playerid, MSGBOX_TYPE_MIDDLE, "~r~~h~~h~Soviet infantry manual",
-				"Do not touch anything unnecessarily. Beware of pretty girls in dance halls and parks who may be spies, as well as bicycles, revolvers, uniforms, arms, dead horses, and men lying on roads - they are not there accidentally",
+				"Do not touch anything unnecessarily. Beware of pretty girls in dance halls and parks who may be spies, as well as bicycles, revolvers, uniforms, arms, dead \
+				horses, and men lying on roads - they are not there accidentally",
 				duration);
 		case 12:
 			MessageBox(

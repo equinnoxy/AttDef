@@ -12,11 +12,6 @@
 #endif
 #define _attdef_header_incl
 
-// modules that consists of hooking must go first
-#include "modules/hooking/commonhooking.inc"
-#include "modules/hooking/safegametext.inc"
-#include "modules/hooking/vehicle.inc"
-
 // Att-Def' core modules modules
 #include "modules/antimacro.inc"
 #include "modules/colors.inc"
@@ -57,8 +52,6 @@
 
 // modules that consists of hooking must go first
 #include "modules/impl/hooking/commonhooking.inc"
-#include "modules/impl/hooking/safegametext.inc"
-#include "modules/impl/hooking/vehicle.inc"
 
 // Att-Def' core modules modules
 #include "modules/impl/antimacro.inc"
@@ -69,13 +62,13 @@
 #include "modules/impl/database.inc"
 #include "modules/impl/deathcam.inc"
 #include "modules/impl/dialogs.inc"
+#include "modules/impl/match.inc"
 #include "modules/impl/duel.inc"
 #include "modules/impl/fields.inc"
 #include "modules/impl/fightstyle.inc"
 #include "modules/impl/freecam.inc"
 #include "modules/impl/global.inc"
 #include "modules/impl/gunmenu.inc"
-#include "modules/impl/match.inc"
 #include "modules/impl/messagebox.inc"
 #include "modules/impl/player.inc"
 #include "modules/impl/spectate.inc"
